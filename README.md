@@ -1,0 +1,1 @@
+[![Maven Build and Release](https://github.com/Muthu-Opensource-Solutions/psso-idp-proxy-server-java/actions/workflows/release.yml/badge.svg)](https://github.com/Muthu-Opensource-Solutions/psso-idp-proxy-server-java/actions/workflows/release.yml)
