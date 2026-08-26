@@ -1,8 +1,5 @@
 package com.muthuopensource.utils;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class SystemConfiguration {
 
     public static String getConfiguration(String propertyName){
