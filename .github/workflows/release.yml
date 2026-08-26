@@ -1,105 +1,55 @@
-name: Build and Release WAR
+name: Maven Build and Release
 
 on:
   push:
     branches:
-      - '**'      # any branch push -> rolling dev release (draft/private)
+      - '**'    # Triggers on pushes to any branch
     tags:
-      - '*'       # any tag push -> permanent public release
-
-permissions:
-  contents: write   # required so the workflow can create/update releases and tags
+      - 'v*'    # Triggers on pushes to tags starting with 'v' (e.g., v1.0.0)
 
 jobs:
-  # ---------------------------------------------------------------
-  # DEVELOPMENT BUILDS: triggered by pushes to any branch.
-  # Produces ONE rolling draft release per branch (private: visible
-  # only to repo collaborators), always holding the latest WAR.
-  # ---------------------------------------------------------------
-  dev-build:
-    if: github.ref_type == 'branch'
+  build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for creating and updating GitHub Releases
 
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: '17' # Update this to match your project's Java version (e.g., 11, 17, 21)
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Set up Maven 3.9.5
-        uses: stCarolas/setup-maven@v5
-        with:
-          maven-version: 3.9.5
-
       - name: Build with Maven
-        run: mvn clean package
+        # Builds the WAR file. Skips tests to speed up the release build; remove -DskipTests if you want tests to run.
+        run: mvn clean package -DskipTests
 
-      - name: Compute safe branch tag
-        id: branchtag
+      - name: Determine Release Configuration
+        id: release_info
         run: |
-          SAFE_BRANCH=$(echo "${{ github.ref_name }}" | tr '/' '-')
-          echo "tag_name=dev-${SAFE_BRANCH}-latest" >> "$GITHUB_OUTPUT"
+          if [ "${{ github.ref_type }}" == "branch" ]; then
+            # For branches: Create a continuous tag (e.g., dev-main) and mark as Pre-release
+            echo "TAG_NAME=dev-${{ github.ref_name }}" >> $GITHUB_ENV
+            echo "IS_PRERELEASE=true" >> $GITHUB_ENV
+            echo "RELEASE_NAME=Development Build (${{ github.ref_name }})" >> $GITHUB_ENV
+          else
+            # For tags: Use the actual git tag and mark as a formal Release
+            echo "TAG_NAME=${{ github.ref_name }}" >> $GITHUB_ENV
+            echo "IS_PRERELEASE=false" >> $GITHUB_ENV
+            echo "RELEASE_NAME=Release ${{ github.ref_name }}" >> $GITHUB_ENV
+          fi
 
-      - name: Move rolling dev tag
-        run: |
-          git tag -f ${{ steps.branchtag.outputs.tag_name }}
-          git push origin ${{ steps.branchtag.outputs.tag_name }} --force
-
-      - name: Create/Update draft (private) dev release
-        uses: softprops/action-gh-release@v2
+      - name: Publish to GitHub Releases
+        uses: ncipollo/release-action@v1
         with:
-          tag_name: ${{ steps.branchtag.outputs.tag_name }}
-          name: "Dev build: ${{ github.ref_name }} (${{ github.sha }})"
-          body: |
-            Latest development build from branch `${{ github.ref_name }}`, commit ${{ github.sha }}.
-            This is a draft release, visible only to repo collaborators.
-          draft: true
-          prerelease: true
-          files: target/*.war
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  # ---------------------------------------------------------------
-  # TAGGED BUILDS: triggered by pushing a git tag.
-  # Produces ONE permanent, public, published release for that tag.
-  # ---------------------------------------------------------------
-  tagged-release:
-    if: github.ref_type == 'tag'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: 'maven'
-
-      - name: Set up Maven 3.9.5
-        uses: stCarolas/setup-maven@v5
-        with:
-          maven-version: 3.9.5
-
-      - name: Build with Maven
-        run: mvn clean package
-
-      - name: Create public GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: "Release ${{ github.ref_name }}"
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-          make_latest: true
-          files: target/*.war
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ env.TAG_NAME }}
+          name: ${{ env.RELEASE_NAME }}
+          prerelease: ${{ env.IS_PRERELEASE == 'true' }}
+          allowUpdates: true        # Allows updating the existing release
+          replacesArtifacts: true   # Deletes the old WAR and uploads the new one
+          artifacts: "target/*.war" # Grabs the WAR generated by pom.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
