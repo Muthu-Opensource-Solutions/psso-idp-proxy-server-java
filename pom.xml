@@ -5,7 +5,7 @@
     <groupId>com.muthuopensource</groupId>
     <artifactId>psso-idp-proxy-server-java</artifactId>
     <packaging>war</packaging>
-    <version>beta-development</version>
+    <version>main</version>
     <name>psso-idp-proxy-server-java</name>
     <properties>
         <jersey.version>4.0.0</jersey.version>
