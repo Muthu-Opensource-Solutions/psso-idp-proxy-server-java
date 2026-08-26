@@ -41,7 +41,7 @@ public class ServerUtils {
     /**
      * Util Used to Store the File in Server in the mentioned File Path
      * @param file File Path
-     * @param inp bytes representing the contents to be stored in File Path
+     * @param fileContents String representing the contents to be stored in File Path
      * @throws Exception
      */
     public static void storeFileInServer(File file, String fileContents) throws Exception {
