@@ -57,5 +57,5 @@ jobs:
           prerelease: ${{ env.IS_PRERELEASE == 'true' }}
           allowUpdates: true
           replacesArtifacts: true
-          artifacts: "target/*.war"
+          artifacts: "target/ROOT.war"
           token: ${{ secrets.GITHUB_TOKEN }}
