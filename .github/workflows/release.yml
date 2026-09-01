@@ -31,10 +31,12 @@ jobs:
 
       - name: Build Docker Image
         run: |
+          # Dynamically get repository name (e.g., psso-idp-proxy-server-java)
+          REPO_NAME="${{ github.event.repository.name }}"
           # Sanitize branch/tag name for Docker tag (e.g., replace '/' with '-')
           BRANCH_TAG=$(echo "${{ github.ref_name }}" | tr '/' '-')
-          IMAGE_NAME="psso-proxy-dep-server-java:${BRANCH_TAG}"
-          ARCHIVE_NAME="psso-proxy-dep-server-java-${BRANCH_TAG}.tar.gz"
+          IMAGE_NAME="${REPO_NAME}:${BRANCH_TAG}"
+          ARCHIVE_NAME="${REPO_NAME}-${BRANCH_TAG}.tar.gz"
 
           echo "Building Docker image: $IMAGE_NAME"
           docker build -t "$IMAGE_NAME" .
