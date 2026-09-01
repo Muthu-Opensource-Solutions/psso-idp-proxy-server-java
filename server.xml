@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Server port="-1" shutdown="SHUTDOWN">
+    <Service name="Catalina">
+        <!-- HTTPS Only on port 443 -->
+        <Connector port="443" protocol="org.apache.coyote.http11.Http11NioProtocol"
+                   maxThreads="150" SSLEnabled="true" scheme="https" secure="true">
+            <SSLHostConfig>
+                <Certificate certificateKeystoreFile="/usr/local/tomcat/ssl/certs.p12"
+                             certificateKeystoreType="PKCS12"
+                             certificateKeystorePassword="${SSL_KEYSTORE_PASSWORD}"/>
+            </SSLHostConfig>
+        </Connector>
+
+        <Engine name="Catalina" defaultHost="localhost">
+            <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true" />
+        </Engine>
+    </Service>
+</Server>

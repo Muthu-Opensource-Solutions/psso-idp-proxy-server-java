@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration scan="true" scanPeriod="30 seconds" debug="true">
 
-    <property name="SERVER_FILES_STORAGE_DIRECTORY" value="${env:SERVER_FILES_STORAGE_DIRECTORY:-/opt/psso}"  />
+    <!-- Logback looks up system properties and OS environment variables by direct name -->
+    <property name="SERVER_FILES_STORAGE_DIRECTORY" value="${SERVER_FILES_STORAGE_DIRECTORY}" />
 
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender" >
         <file>${SERVER_FILES_STORAGE_DIRECTORY}/logs/psso-idp-proxy-server-java.log</file>
@@ -27,7 +28,7 @@
     </appender>
 
 
-    <root level="${env:LOG_LEVEL:-INFO}">
+    <root level="INFO">
         <appender-ref ref="ASYNC_FILE" />
     </root>
 

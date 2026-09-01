@@ -29,6 +29,21 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests -Dgit.branch=${{ github.ref_name }}
 
+      - name: Build Docker Image
+        run: |
+          # Sanitize branch/tag name for Docker tag (e.g., replace '/' with '-')
+          BRANCH_TAG=$(echo "${{ github.ref_name }}" | tr '/' '-')
+          IMAGE_NAME="psso-proxy-dep-server-java:${BRANCH_TAG}"
+          ARCHIVE_NAME="psso-proxy-dep-server-java-${BRANCH_TAG}.tar.gz"
+
+          echo "Building Docker image: $IMAGE_NAME"
+          docker build -t "$IMAGE_NAME" .
+
+          echo "Exporting Docker image to archive: $ARCHIVE_NAME"
+          docker save "$IMAGE_NAME" | gzip > "$ARCHIVE_NAME"
+
+          echo "DOCKER_IMAGE_ARCHIVE=$ARCHIVE_NAME" >> $GITHUB_ENV
+
       - name: Determine Release Configuration and Move Tag
         id: release_info
         run: |
@@ -57,5 +72,8 @@ jobs:
           prerelease: ${{ env.IS_PRERELEASE == 'true' }}
           allowUpdates: true
           replacesArtifacts: true
-          artifacts: "target/ROOT.war"
+          artifacts: |
+            target/ROOT.war
+            ${{ env.DOCKER_IMAGE_ARCHIVE }}
           token: ${{ secrets.GITHUB_TOKEN }}
+
