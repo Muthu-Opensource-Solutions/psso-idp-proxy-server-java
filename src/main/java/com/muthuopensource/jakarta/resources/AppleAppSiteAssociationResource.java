@@ -18,7 +18,7 @@ public class AppleAppSiteAssociationResource {
     @GET
     @Produces(MediaType.TEXT_PLAIN)
     public Response getAppleAppSiteAssoicationResponse(){
-        String response = "{\"authsrv\":{\"apps\":[\"84V944P795.com.muthuopensource.psso-client\",\"84V944P795.com.muthuopensource.psso-client.ssoe\"]}}";
+        String response = "{\"authsrv\":{\"apps\":[\"84V944P795.com.muthuopensource.psso-client-swiftui\"]}}";
         return Response.ok(response,MediaType.TEXT_PLAIN)
                 .build();
     }
