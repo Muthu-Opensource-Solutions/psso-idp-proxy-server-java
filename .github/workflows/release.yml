@@ -29,22 +29,41 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests -Dgit.branch=${{ github.ref_name }}
 
-      - name: Build Docker Image
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Multi-Architecture Docker Images
         run: |
           # Dynamically get repository name (e.g., psso-idp-proxy-server-java)
           REPO_NAME="${{ github.event.repository.name }}"
           # Sanitize branch/tag name for Docker tag (e.g., replace '/' with '-')
           BRANCH_TAG=$(echo "${{ github.ref_name }}" | tr '/' '-')
-          IMAGE_NAME="${REPO_NAME}:${BRANCH_TAG}"
-          ARCHIVE_NAME="${REPO_NAME}-${BRANCH_TAG}.tar.gz"
 
-          echo "Building Docker image: $IMAGE_NAME"
-          docker build -t "$IMAGE_NAME" .
+          AMD64_ARCHIVE="${REPO_NAME}-${BRANCH_TAG}-amd64.tar"
+          ARM64_ARCHIVE="${REPO_NAME}-${BRANCH_TAG}-arm64.tar"
 
-          echo "Exporting Docker image to archive: $ARCHIVE_NAME"
-          docker save "$IMAGE_NAME" | gzip > "$ARCHIVE_NAME"
+          echo "=== Building linux/amd64 image ==="
+          docker buildx build \
+            --platform linux/amd64 \
+            -t "${REPO_NAME}:${BRANCH_TAG}" \
+            -t "${REPO_NAME}:${BRANCH_TAG}-amd64" \
+            --output "type=docker,dest=${AMD64_ARCHIVE}" \
+            .
 
-          echo "DOCKER_IMAGE_ARCHIVE=$ARCHIVE_NAME" >> $GITHUB_ENV
+          echo "=== Building linux/arm64 image ==="
+          docker buildx build \
+            --platform linux/arm64 \
+            -t "${REPO_NAME}:${BRANCH_TAG}" \
+            -t "${REPO_NAME}:${BRANCH_TAG}-arm64" \
+            --output "type=docker,dest=${ARM64_ARCHIVE}" \
+            .
+
+          echo "=== Compressing archives ==="
+          gzip -f "${AMD64_ARCHIVE}"
+          gzip -f "${ARM64_ARCHIVE}"
 
       - name: Determine Release Configuration and Move Tag
         id: release_info
@@ -76,6 +95,6 @@ jobs:
           replacesArtifacts: true
           artifacts: |
             target/ROOT.war
-            ${{ env.DOCKER_IMAGE_ARCHIVE }}
+            *.tar.gz
           token: ${{ secrets.GITHUB_TOKEN }}
 
