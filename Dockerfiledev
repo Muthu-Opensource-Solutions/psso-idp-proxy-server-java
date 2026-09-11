@@ -20,8 +20,14 @@ COPY target/ROOT.war webapps/ROOT.war
 # Create mount points for SSL and persistent storage
 RUN mkdir -p /usr/local/tomcat/ssl /data /logs
 
-#Telling Tomcat to use Environment Variables
+# Telling Tomcat to use Environment Variables
 RUN echo "org.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource" >> conf/catalina.properties
-EXPOSE 443
 
-CMD ["catalina.sh", "run"]
+# Expose HTTPS (443) and Remote Debug (8000)
+EXPOSE 443 8000
+
+# Listen on all interfaces so the host can attach debugger
+ENV JPDA_ADDRESS="*:8000"
+
+# Start with jpda enabled (non-blocking)
+CMD ["catalina.sh", "jpda", "run"]
