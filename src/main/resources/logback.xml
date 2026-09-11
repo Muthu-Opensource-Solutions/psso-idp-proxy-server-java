@@ -2,13 +2,11 @@
 <configuration scan="true" scanPeriod="30 seconds" debug="true">
 
     <!-- Logback looks up system properties and OS environment variables by direct name -->
-    <property name="SERVER_FILES_STORAGE_DIRECTORY" value="${SERVER_FILES_STORAGE_DIRECTORY}" />
-
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender" >
-        <file>${SERVER_FILES_STORAGE_DIRECTORY}/logs/psso-idp-proxy-server-java.log</file>
+        <file>/logs/psso-idp-proxy-server-java.log</file>
 
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${SERVER_FILES_STORAGE_DIRECTORY}/logs/psso-idp-proxy-server-java-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>/logs/psso-idp-proxy-server-java-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>50MB</maxFileSize>
             <maxHistory>30</maxHistory>
             <totalSizeCap>2GB</totalSizeCap>
