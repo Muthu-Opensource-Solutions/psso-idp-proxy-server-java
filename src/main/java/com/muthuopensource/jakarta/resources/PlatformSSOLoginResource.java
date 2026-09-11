@@ -3,17 +3,19 @@ package com.muthuopensource.jakarta.resources;
 import com.muthuopensource.jakarta.annotations.Authentication;
 import com.muthuopensource.exceptions.OauthException;
 import com.muthuopensource.service.PlatformSSOLoginService;
+import com.muthuopensource.utils.AlgoUtils;
 import com.muthuopensource.utils.AuthenitcationType;
 import com.muthuopensource.utils.PSSOUtils;
-import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.util.Base64URL;
-import com.nimbusds.oauth2.sdk.GeneralException;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MultivaluedMap;
+
+import jakarta.ws.rs.core.UriBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
+import java.net.URI;
 import java.util.Map;
 
 /**
@@ -33,21 +35,69 @@ public class PlatformSSOLoginResource {
     public String handleRequest(@FormParam("assertion") String assertion) throws OauthException {
         try{
             logger.info("PlatformSSOLoginResource : Received Login Request");
-            logger.atDebug().log("PlatformSSOLoginResource : Assertion Received for Login Request: {}",assertion);
             JWSObject jws = JWSObject.parse(assertion);
             Map<String,Object> jwsPayloadMap = jws.getPayload().toJSONObject();
-            String userName = jwsPayloadMap.get("username").toString();
-            String password = jwsPayloadMap.get("password").toString();
-            String partyVInfo = ((Map<String,Object>) jwsPayloadMap.get("jwe_crypto")).get("apv").toString();
-            String serialNumber = jwsPayloadMap.get("client_id").toString();
-            String nonce = jwsPayloadMap.get("nonce").toString();
-            return PlatformSSOLoginService.getInstance()
-                    .performPSSOLoginRequst(userName,password,serialNumber,new Base64URL(partyVInfo),nonce)
-                    .serialize();
+            String grantType = jwsPayloadMap.get("grant_type").toString();
+            logger.atDebug().log("PlatformSSOLoginResource : Assertion Received for Login Request: {}, GrantType : {}",assertion,grantType);
+            logger.info("PlatformSSOLoginResource : Received Login Request for Grant Type {}",grantType);
+            if(PSSOUtils.PSSOGrantTypes.PASSWORD.equals(grantType)){
+                return handleGrantTypePassword(assertion);
+            } else if (PSSOUtils.PSSOGrantTypes.OPENID.equals(grantType)) {
+                return handleGrantTypeTokenExchange(assertion);
+            }
+            throw new OauthException("Invalid Login GrantType Received");
         } catch (OauthException e){
             throw e;
         } catch (Exception e){
             throw new OauthException("Failed to process login request. Error: " + e.getMessage());
         }
+    }
+
+    /**
+     * Handles PSSO Login Request For GrantType : Password
+     * @param assertion Login Request JWT Assertion Sent by macOS
+     * @return
+     * @throws Exception
+     */
+    private String handleGrantTypePassword(String assertion) throws Exception {
+        JWSObject jws = JWSObject.parse(assertion);
+        Map<String,Object> jwsPayloadMap = jws.getPayload().toJSONObject();
+        String userName = jwsPayloadMap.get("username").toString();
+        String password = jwsPayloadMap.get("password").toString();
+        String partyVInfo = ((Map<String,Object>) jwsPayloadMap.get("jwe_crypto")).get("apv").toString();
+        String serialNumber = jwsPayloadMap.get("client_id").toString();
+        String nonce = jwsPayloadMap.get("nonce").toString();
+        return PlatformSSOLoginService.getInstance()
+                .performPSSOLoginRequst(userName,password,serialNumber,new Base64URL(partyVInfo),nonce)
+                .serialize();
+    }
+
+    /**
+     * Handles PSSO Login Request For GrantType : urn:ietf:params:oauth:grant-type:token-exchange ( OpenID )
+     * @param assertion Login Request JWT Assertion Sent by macOS
+     * @return
+     * @throws Exception
+     */
+    private String handleGrantTypeTokenExchange(String assertion) throws Exception {
+        JWSObject jws = JWSObject.parse(assertion);
+        Map<String,Object> jwsPayloadMap = jws.getPayload().toJSONObject();
+        String subjectToken = jwsPayloadMap.get("subject_token").toString();
+        String partyVInfo = ((Map<String,Object>) jwsPayloadMap.get("jwe_crypto")).get("apv").toString();
+        String serialNumber = jwsPayloadMap.get("client_id").toString();
+        String nonce = jwsPayloadMap.get("nonce").toString();
+        String scope = jwsPayloadMap.get("scope").toString();
+
+        URI oidcRedirectURI = URI.create(subjectToken);
+        MultivaluedMap<String,String> queryParams = AlgoUtils.decodeQueryParam(oidcRedirectURI.getQuery());
+        String code = queryParams.getFirst("code");
+
+        URI redirectURIWithourQuery = UriBuilder.newInstance()
+                .scheme(oidcRedirectURI.getScheme())
+                .host(oidcRedirectURI.getHost())
+                .path(oidcRedirectURI.getPath())
+                .build();
+        return PlatformSSOLoginService.getInstance()
+                .performPSSOLoginRequest(redirectURIWithourQuery,code,scope,serialNumber,new Base64URL(partyVInfo),nonce)
+                .serialize();
     }
 }

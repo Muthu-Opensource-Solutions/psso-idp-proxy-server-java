@@ -58,6 +58,32 @@ public class PlatformSSOLoginService {
     }
 
     /**
+     * As Per PSSO Login Request Protocol code is Exchanged with the iDP to verify User using Oauth grant_Type=authorization_code
+     * The JWE Response containing the requested id_token is created using Static deviceEncryptionKey and Server's Ephermal Key
+     * @param redirectURI RedirectURI used in Oauth Authentication with authorization Server
+     * @param code authorization_code returned by iDP to Callee
+     * @param scope Scopes for which the Access Token is being requested
+     * @param serialNumber SerialNumber of the Device
+     * @param partyVInfo PartyVInfo for
+     * @param nonce Nonce Sent by Device to be included in id Token
+     * @return
+     * @throws Exception
+     */
+    public JWEObject performPSSOLoginRequest(URI redirectURI, String code,
+                                             String scope,String serialNumber,
+                                             Base64URL partyVInfo,String nonce)
+            throws Exception {
+        URI tokenEndpointURI = OIDCService.getInstance().getMetaData(GrantType.AUTHORIZATION_CODE).getTokenEndpointURI();
+        String authCodeGrantOIDCServerClientID = SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_AUTH_CODE_GRANT_OIDC_CLIENT_ID);
+        String authCodeGrantOIDCServerClientSecret = SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_AUTH_CODE_GRANT_OIDC_CLIENT_SECRET);
+        OIDCTokenResponse tokenResponse = OIDCUtils.performTokenRequest(tokenEndpointURI,code,
+                authCodeGrantOIDCServerClientID,authCodeGrantOIDCServerClientSecret,
+                redirectURI,scope);
+        return generatePSSOLoginResponse(tokenResponse.getOIDCTokens().getAccessToken().toString(),serialNumber,partyVInfo,nonce,GrantType.AUTHORIZATION_CODE);
+    }
+
+    /
+    /**
      * Given AccessToken, SerialNumber and PartyVInfo, the JWE Response is generated as per PSSO Login Response Protocol
      * @param accessToken
      * @param serialNumber
