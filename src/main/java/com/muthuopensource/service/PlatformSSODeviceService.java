@@ -34,20 +34,20 @@ public class PlatformSSODeviceService {
     }
 
     public String getDeviceSigningKey(String serialNumber){
-        Path path = Path.of(SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.SERVER_FILES_STORAGE_DIRECTORY),serialNumber,PSSOUtils.FileNames.deviceSingingKey);
+        Path path = Path.of(PSSOUtils.DirectoryNames.DATA_DIRECTORY,serialNumber,PSSOUtils.FileNames.deviceSingingKey);
         File file = path.toAbsolutePath().toFile();
         return ServerUtils.readFileFromServer(file);
     }
 
     public String getDeviceEncryptionKey(String serialNumber){
-        Path path = Path.of(SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.SERVER_FILES_STORAGE_DIRECTORY),serialNumber,PSSOUtils.FileNames.deviceEncryptionKey);
+        Path path = Path.of(PSSOUtils.DirectoryNames.DATA_DIRECTORY,serialNumber,PSSOUtils.FileNames.deviceEncryptionKey);
         File file = path.toAbsolutePath().toFile();
         return ServerUtils.readFileFromServer(file);
     }
 
 
     private void addOrUpdateDeviceRegistrationKey(JWKECKeyBean ecKeyBean,String serialNumber,String fileName) throws Exception {
-        Path path = Path.of(SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.SERVER_FILES_STORAGE_DIRECTORY),serialNumber,fileName);
+        Path path = Path.of(PSSOUtils.DirectoryNames.DATA_DIRECTORY,serialNumber,fileName);
         File file = path.toAbsolutePath().toFile();
         ObjectMapper mapper = new ObjectMapper();
         String ecKeyString = mapper.writeValueAsString(ecKeyBean);
