@@ -10,9 +10,16 @@
                              certificateKeystorePassword="${SSL_KEYSTORE_PASSWORD}"/>
             </SSLHostConfig>
         </Connector>
-
         <Engine name="Catalina" defaultHost="localhost">
-            <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true" />
+            <Host name="localhost" appBase="webapps" unpackWARs="true" autoDeploy="true">
+                <!-- Access logs written to shared volume (/logs) -->
+                <Valve className="org.apache.catalina.valves.AccessLogValve"
+                       directory="/logs"
+                       prefix="localhost_access_log"
+                       suffix=".txt"
+                       buffered="false"
+                       pattern="%h %l %u %t &quot;%r&quot; %s %b &quot;%{Content-Type}i&quot;" />
+            </Host>
         </Engine>
     </Service>
 </Server>
