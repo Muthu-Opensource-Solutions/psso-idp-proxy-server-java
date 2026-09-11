@@ -35,7 +35,6 @@ public class ServerUtils {
         public static String PSSO_ROPG_CLIENT_ID = "PSSO_ROPG_CLIENT_ID";
         public static String PSSO_ROPG_CLIENT_SECRET = "PSSO_ROPG_CLIENT_SECRET";
         public static String PSSO_HMAC_SECRET_KEY = "PSSO_HMAC_SECRET_KEY";
-        public static String SERVER_FILES_STORAGE_DIRECTORY = "SERVER_FILES_STORAGE_DIRECTORY";
     }
 
     /**
@@ -85,7 +84,7 @@ public class ServerUtils {
      */
     public static ECKey generateServerSigningKey(){
         try {
-            Path serverSigningKeyPath = Path.of(SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.SERVER_FILES_STORAGE_DIRECTORY),"serverSigningKey.jwe");
+            Path serverSigningKeyPath = Path.of(PSSOUtils.DirectoryNames.DATA_DIRECTORY,"serverSigningKey.jwe");
             File file = serverSigningKeyPath.toFile();
 
             if(Files.exists(file.toPath())){
@@ -109,7 +108,7 @@ public class ServerUtils {
     }
 
      private static ECKey getServerSigningKey() throws Exception {
-        Path serverSigningKeyPath = Path.of(SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.SERVER_FILES_STORAGE_DIRECTORY),"serverSigningKey.jwe");
+        Path serverSigningKeyPath = Path.of("/data","serverSigningKey.jwe");
         logger.atDebug().log("Getting Server Signing Key from Path : {}",serverSigningKeyPath.toAbsolutePath());
         File file = serverSigningKeyPath.toFile();
         String jweContents = readFileFromServer(file);
