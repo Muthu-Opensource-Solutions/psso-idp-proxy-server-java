@@ -17,10 +17,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Map;
 
 /**
  * Jakarta Resource Create to handle OIDC Related API Endpoints with PSSO-PROXY-IDP-SERVER
@@ -97,4 +100,42 @@ public class OIDCResource {
             throw new OauthException("Exception Occured during getUserRegistrationDiscoveryResponse");
         }
     }
+
+    /**
+     * This Jakarta Sub-Resource is meant for Federation PreAuthentication which helps in macOS Finding the
+     * authorization_url of the OIDC Provider
+     * @param loginHint
+     * @param scope
+     * @return
+     * @throws MalformedURLException
+     */
+    @GET
+    @Path(PSSOUtils.OIDCEndpointURLs.PSSO_OPENID_TYPE_DISCOVERY_PATH)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getPSSOpenIDDiscoveryResponse(@QueryParam("user") String loginHint,
+                        @QueryParam("serialNumber") String serialNumber) throws MalformedURLException {
+        try{
+            logger.info("OIDCResource : Received Request for PSSO OpenID Discovery");
+            //generating state param
+            loginHint = loginHint == null ? "" : loginHint;
+            byte[] nonceBytes = new byte[16];
+            new SecureRandom().nextBytes(nonceBytes);
+            String state = Base64.getEncoder().encodeToString(nonceBytes);
+            URI redirectURI = new URI("com.apple.platformsso://callback");
+            URI authCodeGrantAuthEndpointURI = OIDCService.getInstance().generateOIDCAuthCodeGrantAuthEndpointURI(redirectURI,state,loginHint);
+            logger.atDebug().log("OIDCResource : Temporary URI Redirect for OpenID Discovery {}", authCodeGrantAuthEndpointURI.toString());
+
+            Map<String,String> response = Map.of(
+                    "account_type","Federated",
+                    "federation_protocol","OIDC",
+                    "authorizationURL", URLDecoder.decode(authCodeGrantAuthEndpointURI.toString()));
+
+            return Response.ok(response)
+                    .build();
+        } catch (Exception e){
+            logger.error("OIDCResource : Exception Occured during getUserRegistrationDiscoveryResponse",e);
+            throw new OauthException("Exception Occured during getUserRegistrationDiscoveryResponse");
+        }
+    }
+
 }

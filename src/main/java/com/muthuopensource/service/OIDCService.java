@@ -85,7 +85,20 @@ public class OIDCService {
                 .queryParam("redirect_uri",redirectURL.toString())
                 .queryParam("scope",getOIDCCummulativeScope())
                 .queryParam("grant_type",GrantType.AUTHORIZATION_CODE.getValue())
-                .queryParam("state",state) // Implement Oauth State Query Param Later
+                .queryParam("state",state)
+                .build();
+    }
+
+    public URI generateOIDCAuthCodeGrantAuthEndpointURI(URI redirectURI,String state,String loginHint) throws GeneralException, IOException {
+        OIDCProviderMetadata metaData = getMetaData(GrantType.AUTHORIZATION_CODE);
+        return UriBuilder.fromUri( metaData.getAuthorizationEndpointURI())
+                .queryParam("response_type","code")
+                .queryParam("client_id",SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_AUTH_CODE_GRANT_OIDC_CLIENT_ID))
+                .queryParam("scope",getOIDCCummulativeScope())
+                .queryParam("grant_type",GrantType.AUTHORIZATION_CODE.getValue())
+                .queryParam("login_hint",loginHint)
+                .queryParam("redirect_uri",redirectURI.toString())
+                .queryParam("state",state)
                 .build();
     }
 
