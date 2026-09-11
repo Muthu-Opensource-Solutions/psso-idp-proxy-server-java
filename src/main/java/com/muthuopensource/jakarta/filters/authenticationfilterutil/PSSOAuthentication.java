@@ -2,6 +2,7 @@ package com.muthuopensource.jakarta.filters.authenticationfilterutil;
 
 import com.muthuopensource.service.PlatformSSODeviceService;
 import com.muthuopensource.service.PlatformSSONonceService;
+import com.muthuopensource.utils.AlgoUtils;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.crypto.ECDSAVerifier;
 import com.nimbusds.jose.jwk.ECKey;
@@ -36,7 +37,7 @@ class PSSOAuthentication implements ServerAuthenticaiton{
             byte[] body = containerRequestContext.getEntityStream().readAllBytes();
             containerRequestContext.setEntityStream(new ByteArrayInputStream(body));
             String bodyStr = new String(body);
-            MultivaluedMap<String,String> paramsMap = decodeQueryParam(bodyStr);
+            MultivaluedMap<String,String> paramsMap = AlgoUtils.decodeQueryParam(bodyStr);
 
             String assertion = paramsMap.getFirst("assertion");
             logger.atDebug().log("PSSOAuthentication : Assertion Received {}",assertion);
@@ -62,26 +63,5 @@ class PSSOAuthentication implements ServerAuthenticaiton{
             logger.error("PSSOAuthentication : Error while authenticating the request: ",e);
         }
         return false;
-    }
-
-    /**
-     * Util meant to convert URL Query Param to MultivaluedMap<String,String> DataStructure.
-     * @param str urlquery param ( Eg : "page=1&scope=openid" )
-     * @return
-     */
-    private MultivaluedMap<String,String> decodeQueryParam(String str){
-        MultivaluedMap<String,String> multivaluedMap = new MultivaluedHashMap<>();
-
-        for(String query:str.split("&")){
-            int seperatorIndex = query.indexOf("=");
-            String queryParam = URLDecoder.decode(query.substring(0,seperatorIndex));
-            String value = URLDecoder.decode(query.substring(seperatorIndex+1,query.length()));
-
-            List<String> existingValueForQueryParam = multivaluedMap.getOrDefault(queryParam,new ArrayList<>());
-            existingValueForQueryParam.add(value);
-
-            multivaluedMap.put(queryParam,existingValueForQueryParam);
-        }
-        return multivaluedMap;
     }
 }
