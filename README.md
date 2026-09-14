@@ -47,7 +47,7 @@ Pre-built multi-architecture Docker images are published in the **[Releases](htt
 
 2. **Decompress the downloaded archive**:
    ```bash
-   gunzip psso-idp-proxy-server-java-<TAG>-<ARCH>.tar.gz
+   unzip psso-idp-proxy-server-java-<TAG>-<ARCH>.tar.gz
    ```
 
 3. **Load the Docker image into your host Docker daemon**:
