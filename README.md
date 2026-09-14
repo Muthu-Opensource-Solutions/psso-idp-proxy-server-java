@@ -9,9 +9,9 @@
 ### Overview
 This project is a server-side proxy implementation designed to work with Apple's **macOS Platform Single Sign-On (Platform SSO / PSSO)** framework.
 
-While Apple's PSSO framework is often used for full device-level SSO, the primary goal of this proxy server is to utilize the **Password Synchronization** feature of the framework. It enables users' local macOS account passwords to synchronize seamlessly with your Identity Provider (IdP) without requiring full device-level SSO enrollment.
+Prominent Identity Providers like Okta, Microsoft, PingIdentity have already Supported Platform SSO from their Side. This Project can be utilized with Identity Providers who doesn't support PSSO Still and have no tools to sync Password from iDP to macOS ( Eg : Auth0, OneLogin etc. ) by utilizing Oauth - Resource Owner Passsword Grant Workflow
 
-This server acts as a proxy between macOS Platform SSO and your standard OpenID Connect (OIDC) Identity Provider (e.g., Okta, Microsoft Entra ID, Ping Identity, Keycloak, etc.).
+While Apple's PSSO framework is often used for full device-level SSO, the primary goal of this proxy server is to utilize the **Password Synchronization** feature of the framework. It enables users' local macOS account passwords to synchronize seamlessly with your Identity Provider (IdP) without requiring full device-level SSO enrollment.
 
 > **Companion macOS Client**:  
 > This server requires the companion client application running on macOS:  
