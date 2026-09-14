@@ -23,7 +23,7 @@ While Apple's PSSO framework is often used for full device-level SSO, the primar
 
 1. **Network Accessibility**:
    - The server must be accessible over HTTPS on port `443`.
-   - It must be reachable via a domain name (`<DOMAIN_FQDN>`, e.g., `psso.example.com`) either over the public internet or within the local network accessible by the test macOS client devices.
+   - It must be reachable via a domain name (`<DOMAIN_FQDN>`, e.g., `psso.example.com`) either over the public internet or within the local network accessible by the test macOS client devices. Consider Running in a VPS like Amazon, DigitalOcean
 
 2. **TLS / SSL Certificate Trust (Apple System Root CA)**:
    - The server **must have TLS enabled** on port `443`.
