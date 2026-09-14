@@ -15,7 +15,6 @@ import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 
 import java.io.IOException;
 import java.net.URI;
-import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 
@@ -46,15 +45,16 @@ public class PlatformSSOLoginService {
      */
     public JWEObject performPSSOLoginRequst(String userName, String password,
                                             String serialNumber, Base64URL partyVInfo,
-                                            String nonce)
-            throws Exception {
+                                            String nonce) throws Exception {
         URI tokenEndpointURI = OIDCService.getInstance().getMetaData(GrantType.PASSWORD).getTokenEndpointURI();
         OIDCTokenResponse tokenResponse = OIDCUtils.performTokenRequest(tokenEndpointURI, userName, password,
                 SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_ROPG_CLIENT_ID),
                 SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_ROPG_CLIENT_SECRET),
                 OIDCService.getInstance().getOIDCCummulativeScope());
 
-        return generatePSSOLoginResponse(tokenResponse.getOIDCTokens().getAccessToken().toString(),serialNumber,partyVInfo,nonce,GrantType.PASSWORD);
+        return generatePSSOLoginResponse(tokenResponse.getOIDCTokens().getAccessToken().toString(),
+                tokenResponse.getOIDCTokens().getRefreshToken().toString(),
+                serialNumber,partyVInfo,nonce,GrantType.PASSWORD);
     }
 
     /**
@@ -71,18 +71,19 @@ public class PlatformSSOLoginService {
      */
     public JWEObject performPSSOLoginRequest(URI redirectURI, String code,
                                              String scope,String serialNumber,
-                                             Base64URL partyVInfo,String nonce)
-            throws Exception {
+                                             Base64URL partyVInfo,String nonce) throws Exception {
         URI tokenEndpointURI = OIDCService.getInstance().getMetaData(GrantType.AUTHORIZATION_CODE).getTokenEndpointURI();
         String authCodeGrantOIDCServerClientID = SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_AUTH_CODE_GRANT_OIDC_CLIENT_ID);
         String authCodeGrantOIDCServerClientSecret = SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_AUTH_CODE_GRANT_OIDC_CLIENT_SECRET);
         OIDCTokenResponse tokenResponse = OIDCUtils.performTokenRequest(tokenEndpointURI,code,
                 authCodeGrantOIDCServerClientID,authCodeGrantOIDCServerClientSecret,
                 redirectURI,scope);
-        return generatePSSOLoginResponse(tokenResponse.getOIDCTokens().getAccessToken().toString(),serialNumber,partyVInfo,nonce,GrantType.AUTHORIZATION_CODE);
+        return generatePSSOLoginResponse(tokenResponse.getOIDCTokens().getAccessToken().toString(),
+                tokenResponse.getOIDCTokens().getRefreshToken().toString(),
+                serialNumber,partyVInfo,nonce,GrantType.AUTHORIZATION_CODE);
     }
 
-    /
+
     /**
      * Given AccessToken, SerialNumber and PartyVInfo, the JWE Response is generated as per PSSO Login Response Protocol
      * @param accessToken
@@ -94,23 +95,25 @@ public class PlatformSSOLoginService {
      * @throws java.text.ParseException
      * @throws JOSEException
      */
-    private JWEObject generatePSSOLoginResponse(String accessToken,String serialNumber,Base64URL partyVInfo,String nonce,GrantType grantType)
+    public JWEObject generatePSSOLoginResponse(String accessToken,String refreshToken,String serialNumber,Base64URL partyVInfo,String nonce,GrantType grantType)
             throws Exception {
         URI userInfoEndpointURI = OIDCService.getInstance().getMetaData(grantType).getUserInfoEndpointURI();
         UserInfo userInfo = OIDCUtils.performUserInfoRequest(userInfoEndpointURI, accessToken);
+
+        Date issuedTime = new Date();//
+        Date expirationTime = new Date(issuedTime.getTime() + 60);//60seconds expiry
 
 
         JWTClaimsSet idTokenJwtClaimsSet = new JWTClaimsSet.Builder(userInfo.toJWTClaimsSet())
                 .issuer("psso-idp-proxy-server-java")
                 .audience(serialNumber)
-                .issueTime(Date.from(Instant.now()))
-                .expirationTime(Date.from(Instant.now().plusMillis(86400000)))// 1 Day expiry
+                .issueTime(issuedTime)
+                .expirationTime(expirationTime)
                 .claim("nonce",nonce)
                 .build();
 
-
-        Payload jwePayload = new Payload(Map.of("refresh_token","dummy",
-                "expires_in",idTokenJwtClaimsSet.getExpirationTime().toInstant().toEpochMilli(),
+        Payload jwePayload = new Payload(Map.of("refresh_token",refreshToken,
+                "expires_in",3600*18,//Setting Expiration to 18hours as this is maximum LoginFrequency Allowed Time according to PSSO
                 "id_token", CryptoUtil.generateSignedJWT(PSSOUtils.getServerSigningKey(), idTokenJwtClaimsSet).serialize(),
                 "token_type","Bearer"));
 

@@ -104,7 +104,7 @@ public class OIDCService {
 
     public String getOIDCCummulativeScope(){
         String additionalCustomScope = SystemConfiguration.getConfigurationOrDefault("PSSO_OIDC_CUSTOM_SCOPES","");
-        String mandatoryScope = String.join(" ","openid","profile","email");
+        String mandatoryScope = String.join(" ","openid","profile","email","offline_access");
         if(additionalCustomScope.isEmpty())
             return mandatoryScope;
         return String.join(" ",mandatoryScope, additionalCustomScope);

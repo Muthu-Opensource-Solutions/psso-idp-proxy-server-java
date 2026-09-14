@@ -9,6 +9,7 @@ import com.nimbusds.oauth2.sdk.auth.Secret;
 import com.nimbusds.oauth2.sdk.http.HTTPResponse;
 import com.nimbusds.oauth2.sdk.id.ClientID;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
+import com.nimbusds.oauth2.sdk.token.RefreshToken;
 import com.nimbusds.openid.connect.sdk.*;
 import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 import org.slf4j.Logger;
@@ -57,8 +58,10 @@ public class OIDCUtils {
      * @param redirectURI
      * @return
      */
-    public static OIDCTokenResponse performTokenRequest(URI tokenEndpointURI, String code, String clientID, String clientSecret, URI redirectURI,String scope) throws IOException, ParseException {
-        ClientAuthentication clientAuthentication = new ClientSecretPost(new ClientID(clientID),new Secret(clientSecret));
+    public static OIDCTokenResponse performTokenRequest(URI tokenEndpointURI, String code,
+                                                        String clientID, String clientSecret,
+                                                        URI redirectURI,String scope) throws IOException, ParseException {
+        ClientAuthentication clientAuthentication = new ClientSecretBasic(new ClientID(clientID),new Secret(clientSecret));
         AuthorizationGrant grant = new AuthorizationCodeGrant(new AuthorizationCode(code),redirectURI);
         TokenRequest tokenRequest = new TokenRequest(tokenEndpointURI,clientAuthentication,grant, Scope.parse(scope));
         TokenResponse tokenResponse = OIDCTokenResponseParser.parse(tokenRequest.toHTTPRequest()
@@ -70,6 +73,32 @@ public class OIDCUtils {
 
         logger.error("Error Occurred During Token Request , Token Response Body : {}",tokenErrorResponse.toJSONObject().toJSONString());
         throw new OauthException("Error Occurred During Token Request, Token Response Body :" + tokenErrorResponse.toJSONObject().toJSONString());
+    }
+
+    /**
+     * Performs a Oauth Refresh Token Request
+     * @param tokenEndpointURI
+     * @param refreshToken
+     * @param clientID
+     * @param clientSecret
+     * @return
+     * @throws IOException
+     * @throws ParseException
+     */
+    public static OIDCTokenResponse performTokenRequest(URI tokenEndpointURI, String refreshToken,
+                                                        String clientID, String clientSecret) throws IOException, ParseException {
+        ClientAuthentication clientAuthentication = new ClientSecretBasic(new ClientID(clientID),new Secret(clientSecret));
+        RefreshTokenGrant refreshTokenGrant = new RefreshTokenGrant(new RefreshToken(refreshToken));
+        TokenRequest tokenRequest = new TokenRequest(tokenEndpointURI,clientAuthentication,refreshTokenGrant);
+        TokenResponse tokenResponse = OIDCTokenResponseParser.parse(tokenRequest.toHTTPRequest()
+                .send());
+        if (tokenResponse.indicatesSuccess())
+            return (OIDCTokenResponse) tokenResponse.toSuccessResponse();
+
+        TokenErrorResponse tokenErrorResponse = (TokenErrorResponse) tokenResponse;
+
+        logger.error("Error Occurred During Refresh Token Request , Refresh Token Response Body : {}",tokenErrorResponse.toJSONObject().toJSONString());
+        throw new OauthException("Error Occurred During Refresh Token Request, Refresh Token Response Body :" + tokenErrorResponse.toJSONObject().toJSONString());
     }
 
     /**
