@@ -15,6 +15,7 @@ import com.nimbusds.openid.connect.sdk.claims.UserInfo;
 
 import java.io.IOException;
 import java.net.URI;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
 
@@ -101,7 +102,7 @@ public class PlatformSSOLoginService {
         UserInfo userInfo = OIDCUtils.performUserInfoRequest(userInfoEndpointURI, accessToken);
 
         Date issuedTime = new Date();//
-        Date expirationTime = new Date(issuedTime.getTime() + 60);//60seconds expiry
+        Date expirationTime = new Date(issuedTime.getTime() + (60*1000L));//60seconds expiry
 
 
         JWTClaimsSet idTokenJwtClaimsSet = new JWTClaimsSet.Builder(userInfo.toJWTClaimsSet())

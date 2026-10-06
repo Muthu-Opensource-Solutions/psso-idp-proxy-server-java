@@ -37,17 +37,18 @@ public class PlatformSSOKeyResource {
         Map<String,Object> jwsPayloadMap = jws.getPayload().toJSONObject();
         String requestType = jwsPayloadMap.get("request_type").toString();
         String serialNumber = jwsPayloadMap.get("client_id").toString();
-        String keyPurpose = jwsPayloadMap.get("key_purpose").toString();
-        String userName = jwsPayloadMap.get("username").toString();
         String partyVInfo = ((Map<String,Object>) jwsPayloadMap.get("jwe_crypto")).get("apv").toString();
-        logger.info("PlatformSSOKeyResource : Received Key Request, SN : {}, Key Purpose : {}",serialNumber,keyPurpose);
         if(requestType.equals("key_request")) {
+            String keyPurpose = jwsPayloadMap.get("key_purpose").toString();
+            String userName = jwsPayloadMap.get("username").toString();
+            logger.info("PlatformSSOKeyResource : Received Key Request, SN : {}, Key Purpose : {}",serialNumber,keyPurpose);
             return PlatformSSOKeyService.getInstance()
                     .performPSSOKeyRequest(serialNumber, new Base64URL(partyVInfo), keyPurpose, userName)
                     .serialize();
         } else if (requestType.equals("key_exchange")) {
             String otherPublickey = jwsPayloadMap.get("other_publickey").toString();
             String keyContext = jwsPayloadMap.get("key_context").toString();
+            logger.info("PlatformSSOKeyResource : Received Key Exchange Request, SN : {}",serialNumber);
             return PlatformSSOKeyService.getInstance()
                     .performPSSOKeyExchange(serialNumber,new Base64URL(otherPublickey), new Base64URL(partyVInfo), keyContext)
                     .serialize();
