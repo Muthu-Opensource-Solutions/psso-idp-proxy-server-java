@@ -52,10 +52,12 @@ public class OIDCService {
 
         public static void syncOIDCMetaData() throws GeneralException, IOException {
             try {
-                Issuer passwordGrantIssuer = new Issuer(SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_ROPG_OIDC_PROVIDER_URL));
-                Issuer authCodeGrantIssuer = new Issuer(SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_AUTH_CODE_GRANT_OIDC_PROVIDER_URL));
-                passwordGrantMetaData =  OIDCProviderMetadata.resolve(passwordGrantIssuer);
-                authCodeGrantMetaData = OIDCProviderMetadata.resolve(authCodeGrantIssuer);
+                String passwordGrantIssuerString = SystemConfiguration.getConfigurationOrDefault(ServerUtils.PropertyConstants.PSSO_ROPG_OIDC_PROVIDER_URL,null);
+                if (passwordGrantIssuerString!=null)
+                    passwordGrantMetaData = OIDCProviderMetadata.resolve(new Issuer(passwordGrantIssuerString));
+                String authCodeGrantIssuerString = SystemConfiguration.getConfigurationOrDefault(ServerUtils.PropertyConstants.PSSO_AUTH_CODE_GRANT_OIDC_PROVIDER_URL,null);
+                if(authCodeGrantIssuerString!=null)
+                    authCodeGrantMetaData = OIDCProviderMetadata.resolve(new Issuer(authCodeGrantIssuerString));
             } catch (Exception e) {
                 throw new GeneralException("Error while fetching OIDC metadata", e);
             }
@@ -84,7 +86,6 @@ public class OIDCService {
                 .queryParam("client_id",SystemConfiguration.getConfiguration(ServerUtils.PropertyConstants.PSSO_AUTH_CODE_GRANT_OIDC_CLIENT_ID))
                 .queryParam("redirect_uri",redirectURL.toString())
                 .queryParam("scope",getOIDCCummulativeScope())
-                .queryParam("grant_type",GrantType.AUTHORIZATION_CODE.getValue())
                 .queryParam("state",state)
                 .build();
     }

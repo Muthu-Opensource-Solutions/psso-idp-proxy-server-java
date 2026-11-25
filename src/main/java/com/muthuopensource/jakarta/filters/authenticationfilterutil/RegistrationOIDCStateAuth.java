@@ -1,6 +1,8 @@
 package com.muthuopensource.jakarta.filters.authenticationfilterutil;
 
+import com.muthuopensource.utils.PSSOUtils;
 import jakarta.ws.rs.container.ContainerRequestContext;
+import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MultivaluedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +23,12 @@ class RegistrationOIDCStateAuth implements ServerAuthenticaiton{
             return false;
         }
         String state = stateList.getFirst();
-        String stateFromCookie = containerRequestContext.getCookies().get("X-State-Cookie").getValue();
+        Cookie stateCookie = containerRequestContext.getCookies().get(PSSOUtils.STATE_COOKIE_NAME);
+        if (stateCookie == null) {
+            logger.error("RegistrationOIDCStateAuth : {} is missing in HTTP Request", PSSOUtils.STATE_COOKIE_NAME);
+            return false;
+        }
+        String stateFromCookie = stateCookie.getValue();
         if(!state.equals(stateFromCookie)){
             logger.error("RegistrationOIDCStateAuth : State Param : {} X-State-Cookie : {} is not matching",state,stateFromCookie);
             return false;

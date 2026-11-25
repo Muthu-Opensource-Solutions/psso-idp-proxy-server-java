@@ -121,4 +121,35 @@ public class OIDCUtils {
         logger.error("Error Occurred During UserInfo Request , UserInfo Response Body : {}",errorResponse.getErrorObject().toJSONObject().toJSONString());
         throw new OauthException("Error Occurred During Token Request, Token Response Body :" + errorResponse.getErrorObject().toJSONObject().toJSONString());
     }
+
+    /**
+     * Evaluates email and login username from the UserInfo response.
+     * Crosschecks if loginUserName is equal to email. Otherwise returns false.
+     * @param loginUserName Username from macOS login request
+     * @param userInfo UserInfo claims returned by the IdP
+     * @return boolean true if loginUserName equals email, false otherwise
+     */
+    public static boolean evaluateUserIdentity(String loginUserName, UserInfo userInfo) {
+        if (userInfo == null || loginUserName == null) {
+            logger.error("PlatformSSOLoginService : UserInfo or loginUserName is null");
+            return false;
+        }
+
+        String email = userInfo.getEmailAddress();
+        logger.info("PlatformSSOLoginService : Evaluating UserInfo - email: {}, login username: {}", email, loginUserName);
+
+        if (email == null || email.isEmpty()) {
+            logger.error("PlatformSSOLoginService : UserInfo does not contain email claim");
+            return false;
+        }
+
+        if (!email.equalsIgnoreCase(loginUserName)) {
+            logger.error("PlatformSSOLoginService : Identity mismatch! Login username '{}' does not match IdP email '{}'", loginUserName, email);
+            return false;
+        }
+
+        logger.info("PlatformSSOLoginService : User identity evaluation successful");
+        return true;
+    }
+
 }

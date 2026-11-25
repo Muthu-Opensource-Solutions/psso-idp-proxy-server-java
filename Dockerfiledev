@@ -23,11 +23,14 @@ RUN mkdir -p /usr/local/tomcat/ssl /data /logs
 # Telling Tomcat to use Environment Variables
 RUN echo "org.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource" >> conf/catalina.properties
 
-# Expose HTTPS (443) and Remote Debug (8000)
-EXPOSE 443 8000
+# Mitigate Java4Shell (CVE-2026-114938) Base64 intrinsic vulnerability
+ENV CATALINA_OPTS="-XX:-UseBASE64Intrinsics"
+
+# Expose HTTPS (443) and Remote Debug (8123)
+EXPOSE 443 8123
 
 # Listen on all interfaces so the host can attach debugger
-ENV JPDA_ADDRESS="*:8000"
+ENV JPDA_ADDRESS="*:8123"
 
 # Start with jpda enabled (non-blocking)
 CMD ["catalina.sh", "jpda", "run"]

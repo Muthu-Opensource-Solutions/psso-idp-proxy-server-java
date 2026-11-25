@@ -1,6 +1,7 @@
 package com.muthuopensource.jakarta.resources;
 
 import com.muthuopensource.jakarta.annotations.Authentication;
+import com.muthuopensource.exceptions.AuthenticationException;
 import com.muthuopensource.exceptions.OauthException;
 import com.muthuopensource.service.PlatformSSOLoginService;
 import com.muthuopensource.utils.AlgoUtils;
@@ -9,9 +10,9 @@ import com.muthuopensource.utils.PSSOUtils;
 import com.nimbusds.jose.JWSObject;
 import com.nimbusds.jose.util.Base64URL;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MultivaluedMap;
-
-import jakarta.ws.rs.core.UriBuilder;
+import jakarta.ws.rs.core.UriInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +26,8 @@ import java.util.Map;
 @Authentication(AuthenitcationType.PSSO_AUTH)
 public class PlatformSSOLoginResource {
 
+    @Context
+    private UriInfo uriInfo;
 
     private static Logger logger = LoggerFactory.getLogger(PlatformSSOLoginResource.class);
     /**
@@ -46,6 +49,8 @@ public class PlatformSSOLoginResource {
                 return handleGrantTypeTokenExchange(assertion);
             }
             throw new OauthException("Invalid Login GrantType Received");
+        } catch (AuthenticationException e){
+            throw e;
         } catch (OauthException e){
             throw e;
         } catch (Exception e){
@@ -86,18 +91,17 @@ public class PlatformSSOLoginResource {
         String serialNumber = jwsPayloadMap.get("client_id").toString();
         String nonce = jwsPayloadMap.get("nonce").toString();
         String scope = jwsPayloadMap.get("scope").toString();
+        String userName = jwsPayloadMap.get("username") != null ? jwsPayloadMap.get("username").toString() : null;
 
         URI oidcRedirectURI = URI.create(subjectToken);
         MultivaluedMap<String,String> queryParams = AlgoUtils.decodeQueryParam(oidcRedirectURI.getQuery());
         String code = queryParams.getFirst("code");
 
-        URI redirectURIWithourQuery = UriBuilder.newInstance()
-                .scheme(oidcRedirectURI.getScheme())
-                .host(oidcRedirectURI.getHost())
-                .path(oidcRedirectURI.getPath())
-                .build();
+        URI callbackURI = PSSOUtils.getPSSOWebAuthCallbackURI(uriInfo);
+
+        logger.info("PlatformSSOLoginResource : Using redirect_uri for token request: {}, username: {}", callbackURI, userName);
         return PlatformSSOLoginService.getInstance()
-                .performPSSOLoginRequest(redirectURIWithourQuery,code,scope,serialNumber,new Base64URL(partyVInfo),nonce)
+                .performPSSOLoginRequest(callbackURI,code,scope,serialNumber,new Base64URL(partyVInfo),nonce,userName)
                 .serialize();
     }
 }

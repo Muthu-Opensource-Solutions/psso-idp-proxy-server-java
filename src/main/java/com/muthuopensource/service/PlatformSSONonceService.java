@@ -3,8 +3,8 @@ package com.muthuopensource.service;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.muthuopensource.exceptions.DatabaseException;
+import com.muthuopensource.utils.PSSOUtils;
 
-import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
@@ -27,8 +27,7 @@ public class PlatformSSONonceService {
             .build();
 
     public String generateNonce(String serialNumber) throws DatabaseException {
-        byte[] nonceBytes = new byte[16];
-        new SecureRandom().nextBytes(nonceBytes);
+        byte[] nonceBytes = PSSOUtils.generateRandomBytes(16);
         String nonceString = serialNumber + ":" + Base64.getEncoder().encodeToString(nonceBytes);
         nonceCache.put(nonceString,nonceString);
         return nonceString;
